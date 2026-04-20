@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 import os
 
-BOT_TOKEN = "8700460129:AAEOq9VvbN1Y4XhTZbBOIwmJTIlOJa5olW0"
+BOT_TOKEN = "bot_tok"
 BOT = Bot(token=BOT_TOKEN)
 
 app = Flask(__name__)
