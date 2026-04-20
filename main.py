@@ -4,9 +4,10 @@ import requests
 from bs4 import BeautifulSoup
 import os
 
-BOT_TOKEN = "bot_tok"
-BOT = Bot(token=BOT_TOKEN)
+# 🔐 Get token from environment
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
+BOT = Bot(token=BOT_TOKEN)
 app = Flask(__name__)
 
 # 🔥 FastDL scraping
