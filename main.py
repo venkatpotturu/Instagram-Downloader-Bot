@@ -15,10 +15,6 @@ app = Flask(__name__)
 
 from playwright.sync_api import sync_playwright
 
-from playwright.sync_api import sync_playwright
-
-from playwright.sync_api import sync_playwright
-
 def get_video_url(insta_url):
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -27,29 +23,34 @@ def get_video_url(insta_url):
         )
 
         page = browser.new_page()
-        page.goto("https://fastdl.app/en2")
 
-        # Input link
-        page.fill('input[type="text"]', insta_url)
-
-        # Click download button
-        page.click('button')
-
-        # Wait for page to load results
-        page.wait_for_timeout(6000)
-
+        # Capture network responses
         video_url = None
 
-        # 🔥 Find download buttons
-        links = page.query_selector_all("a")
+        def handle_response(response):
+            nonlocal video_url
+            if ".mp4" in response.url:
+                video_url = response.url
 
-        for link in links:
-            href = link.get_attribute("href")
+        page.on("response", handle_response)
 
-            if href and ("download" in href or "dl" in href):
-                if href.startswith("http"):
-                    video_url = href
-                    break
+        page.goto("https://fastdl.app/en2")
+
+        page.fill('input[type="text"]', insta_url)
+        page.click('button')
+
+        # Wait for results
+        page.wait_for_timeout(5000)
+
+        # 🔥 Click ALL possible download buttons
+        buttons = page.query_selector_all("a")
+
+        for btn in buttons:
+            try:
+                btn.click()
+                page.wait_for_timeout(3000)
+            except:
+                pass
 
         browser.close()
         return video_url
