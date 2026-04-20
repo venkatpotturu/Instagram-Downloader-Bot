@@ -17,6 +17,8 @@ from playwright.sync_api import sync_playwright
 
 from playwright.sync_api import sync_playwright
 
+from playwright.sync_api import sync_playwright
+
 def get_video_url(insta_url):
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -27,22 +29,22 @@ def get_video_url(insta_url):
         page = browser.new_page()
         page.goto("https://fastdl.app/en2")
 
-        # Fill input
+        # Input link
         page.fill('input[type="text"]', insta_url)
 
-        # Click submit button
+        # Click download button
         page.click('button')
 
-        # Wait for results to load
-        page.wait_for_timeout(5000)
-
-        # 🔥 Click download button (IMPORTANT)
-        buttons = page.query_selector_all("a")
+        # Wait for page to load results
+        page.wait_for_timeout(6000)
 
         video_url = None
 
-        for btn in buttons:
-            href = btn.get_attribute("href")
+        # 🔥 Find download buttons
+        links = page.query_selector_all("a")
+
+        for link in links:
+            href = link.get_attribute("href")
 
             if href and ("download" in href or "dl" in href):
                 if href.startswith("http"):
@@ -51,7 +53,6 @@ def get_video_url(insta_url):
 
         browser.close()
         return video_url
-
 
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
