@@ -42,18 +42,25 @@ def get_video_url(insta_url):
 
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
-    update = Update.de_json(request.get_json(), BOT)
+    data = request.get_json()
 
-    if update.message:
-        chat_id = update.message.chat.id
-        text = update.message.text
+    if "message" in data:
+        chat_id = data["message"]["chat"]["id"]
+        text = data["message"].get("text", "")
 
-        BOT.send_message(chat_id, "🔍 Processing via FastDL...")
+        # ✅ Send message (sync way)
+        requests.post(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+            data={"chat_id": chat_id, "text": "🔍 Processing via FastDL..."}
+        )
 
         video_url = get_video_url(text)
 
         if not video_url:
-            BOT.send_message(chat_id, "❌ Failed to fetch video")
+            requests.post(
+                f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                data={"chat_id": chat_id, "text": "❌ Failed to fetch video"}
+            )
             return "ok"
 
         video_data = requests.get(video_url)
@@ -61,7 +68,13 @@ def webhook():
         with open("video.mp4", "wb") as f:
             f.write(video_data.content)
 
-        BOT.send_video(chat_id, video=open("video.mp4", "rb"))
+        # ✅ Send video
+        requests.post(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/sendVideo",
+            data={"chat_id": chat_id},
+            files={"video": open("video.mp4", "rb")}
+        )
+
         os.remove("video.mp4")
 
     return "ok"
