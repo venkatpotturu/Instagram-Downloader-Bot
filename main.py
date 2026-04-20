@@ -1,3 +1,6 @@
+import os
+os.system("playwright install chromium")
+
 from flask import Flask, request
 from telegram import Bot, Update
 import requests
