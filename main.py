@@ -10,32 +10,38 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 BOT = Bot(token=BOT_TOKEN)
 app = Flask(__name__)
 
-# 🔥 FastDL scraping
+from playwright.sync_api import sync_playwright
+
 def get_video_url(insta_url):
-    url = "https://fastdl.app/en2"
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
 
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Referer": "https://fastdl.app/"
-    }
+        page.goto("https://fastdl.app/en2")
 
-    data = {"url": insta_url}
+        # Fill input
+        page.fill('input[type="text"]', insta_url)
 
-    response = requests.post(url, headers=headers, data=data)
+        # Click download button
+        page.click('button')
 
-    html = response.text
+        # Wait for result
+        page.wait_for_timeout(5000)
 
-    # 🔥 Extract video link using string search (not soup)
-    import re
+        video_url = None
 
-    matches = re.findall(r'https?://[^\s"]+\.mp4', html)
+        # Try to get video link
+        links = page.query_selector_all("a")
 
-    if matches:
-        return matches[0]
+        for link in links:
+            href = link.get_attribute("href")
+            if href and ".mp4" in href:
+                video_url = href
+                break
 
-    return None
+        browser.close()
 
-
+        return video_url
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
     data = request.get_json()
