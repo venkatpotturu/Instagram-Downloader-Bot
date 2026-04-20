@@ -1,22 +1,22 @@
 import os
+import re
 import requests
-from flask import Flask, request
 import yt_dlp
+import logging
+from flask import Flask, request
 
 app = Flask(__name__)
 
-# Get token from environment
+logging.basicConfig(level=logging.INFO)
+
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 @app.route("/")
 def home():
     return "Bot is running!"
 
-import re
-import requests
-
-def get_video_url(insta_url):
-    print("FUNCTION CALLED")
+# 🔥 METHOD 1: EMBED (fast)
+def get_video_embed(insta_url):
     try:
         if not insta_url.endswith("/"):
             insta_url += "/"
@@ -30,36 +30,61 @@ def get_video_url(insta_url):
         res = requests.get(embed_url, headers=headers)
         html = res.text
 
-        html = res.text
+        logging.info("EMBED METHOD USED")
 
-        print("===== HTML DEBUG START =====")
-        print(html[:2000])
-        print("===== HTML DEBUG END =====")
-        
-        # 🔥 Method 1: video_url
+        # Method 1
         match = re.search(r'"video_url":"([^"]+)"', html)
-
         if match:
             return match.group(1).replace("\\u0026", "&")
 
-        # 🔥 Method 2: og:video (backup)
+        # Method 2
         match = re.search(r'property="og:video" content="([^"]+)"', html)
-
         if match:
             return match.group(1)
 
-        # 🔥 Method 3: direct mp4 fallback
+        # Method 3
         match = re.search(r'https://[^"]+\.mp4', html)
-
         if match:
             return match.group(0)
 
     except Exception as e:
-        print("Error:", e)
+        logging.error(f"Embed error: {e}")
 
     return None
 
-# 🤖 Telegram webhook
+
+# 🔥 METHOD 2: YT-DLP (fallback)
+def get_video_ytdlp(insta_url):
+    try:
+        logging.info("YT-DLP FALLBACK USED")
+
+        ydl_opts = {
+            'format': 'best',
+            'quiet': True,
+            'noplaylist': True,
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(insta_url, download=False)
+            return info.get('url', None)
+
+    except Exception as e:
+        logging.error(f"yt-dlp error: {e}")
+        return None
+
+
+# 🔥 MAIN FUNCTION
+def get_video_url(insta_url):
+    # Try embed first
+    video = get_video_embed(insta_url)
+    if video:
+        return video
+
+    # Fallback to yt-dlp
+    return get_video_ytdlp(insta_url)
+
+
+# 🤖 TELEGRAM WEBHOOK
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
     data = request.get_json()
@@ -83,7 +108,7 @@ def webhook():
             )
             return "ok"
 
-        # Send video directly
+        # Send video
         requests.post(
             f"https://api.telegram.org/bot{BOT_TOKEN}/sendVideo",
             data={
@@ -93,6 +118,7 @@ def webhook():
         )
 
     return "ok"
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
