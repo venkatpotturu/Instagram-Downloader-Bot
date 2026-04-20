@@ -15,27 +15,23 @@ def get_video_url(insta_url):
     url = "https://fastdl.app/en2"
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Origin": "https://fastdl.app",
-        "Referer": "https://fastdl.app/en2"
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://fastdl.app/"
     }
 
     data = {"url": insta_url}
 
     response = requests.post(url, headers=headers, data=data)
 
-    # 🔍 DEBUG: print HTML (for fixing issues)
-    print(response.text[:1000])
+    html = response.text
 
-    soup = BeautifulSoup(response.text, "html.parser")
+    # 🔥 Extract video link using string search (not soup)
+    import re
 
-    # 🔥 Improved link detection
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
+    matches = re.findall(r'https?://[^\s"]+\.mp4', html)
 
-        if ("download" in href or ".mp4" in href) and "http" in href:
-            return href
+    if matches:
+        return matches[0]
 
     return None
 
