@@ -17,9 +17,9 @@ import requests
 
 def get_video_url(insta_url):
     try:
-        # Convert to embed URL
         if not insta_url.endswith("/"):
             insta_url += "/"
+
         embed_url = insta_url + "embed"
 
         headers = {
@@ -27,13 +27,28 @@ def get_video_url(insta_url):
         }
 
         res = requests.get(embed_url, headers=headers)
+        html = res.text
 
-        # 🔥 Extract video URL from page
-        match = re.search(r'"video_url":"([^"]+)"', res.text)
+        # 👇 ADD THIS LINE HERE
+        print(html[:2000])
+        
+        # 🔥 Method 1: video_url
+        match = re.search(r'"video_url":"([^"]+)"', html)
 
         if match:
-            video_url = match.group(1)
-            return video_url.replace("\\u0026", "&")
+            return match.group(1).replace("\\u0026", "&")
+
+        # 🔥 Method 2: og:video (backup)
+        match = re.search(r'property="og:video" content="([^"]+)"', html)
+
+        if match:
+            return match.group(1)
+
+        # 🔥 Method 3: direct mp4 fallback
+        match = re.search(r'https://[^"]+\.mp4', html)
+
+        if match:
+            return match.group(0)
 
     except Exception as e:
         print("Error:", e)
