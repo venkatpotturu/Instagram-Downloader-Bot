@@ -62,6 +62,7 @@ def get_video_ytdlp(insta_url):
             'format': 'best',
             'quiet': True,
             'noplaylist': True,
+            'cookiefile': 'cookies.txt'   # 🔥 ADD THIS LINE
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
