@@ -15,41 +15,44 @@ app = Flask(__name__)
 
 from playwright.sync_api import sync_playwright
 
+from playwright.sync_api import sync_playwright
+
 def get_video_url(insta_url):
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
             args=["--no-sandbox", "--disable-dev-shm-usage"]
         )
-        page = browser.new_page()
 
+        page = browser.new_page()
         page.goto("https://fastdl.app/en2")
 
         # Fill input
         page.fill('input[type="text"]', insta_url)
 
-        # Click download button
+        # Click submit button
         page.click('button')
 
-        # Wait for result
+        # Wait for results to load
         page.wait_for_timeout(5000)
+
+        # 🔥 Click download button (IMPORTANT)
+        buttons = page.query_selector_all("a")
 
         video_url = None
 
-        # Try to get video link
-        page.wait_for_selector('a[href*=".mp4"]', timeout=10000)
+        for btn in buttons:
+            href = btn.get_attribute("href")
 
-        video_url = page.query_selector('a[href*=".mp4"]').get_attribute("href")
-
-        for link in links:
-            href = link.get_attribute("href")
-            if href and ".mp4" in href:
-                video_url = href
-                break
+            if href and ("download" in href or "dl" in href):
+                if href.startswith("http"):
+                    video_url = href
+                    break
 
         browser.close()
-
         return video_url
+
+
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
     data = request.get_json()
