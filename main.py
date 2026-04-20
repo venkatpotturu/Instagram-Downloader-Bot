@@ -16,6 +16,7 @@ import re
 import requests
 
 def get_video_url(insta_url):
+    print("FUNCTION CALLED")
     try:
         if not insta_url.endswith("/"):
             insta_url += "/"
@@ -29,8 +30,11 @@ def get_video_url(insta_url):
         res = requests.get(embed_url, headers=headers)
         html = res.text
 
-        # 👇 ADD THIS LINE HERE
+        html = res.text
+
+        print("===== HTML DEBUG START =====")
         print(html[:2000])
+        print("===== HTML DEBUG END =====")
         
         # 🔥 Method 1: video_url
         match = re.search(r'"video_url":"([^"]+)"', html)
