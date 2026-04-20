@@ -37,7 +37,9 @@ def get_video_url(insta_url):
         video_url = None
 
         # Try to get video link
-        links = page.query_selector_all("a")
+        page.wait_for_selector('a[href*=".mp4"]', timeout=10000)
+
+        video_url = page.query_selector('a[href*=".mp4"]').get_attribute("href")
 
         for link in links:
             href = link.get_attribute("href")
