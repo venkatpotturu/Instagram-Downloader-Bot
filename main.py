@@ -12,21 +12,33 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 def home():
     return "Bot is running!"
 
-# 🎥 Get video URL using yt-dlp
-def get_video_url(insta_url):
-    ydl_opts = {
-        'format': 'best',
-        'quiet': True,
-        'noplaylist': True,
-    }
+import re
+import requests
 
+def get_video_url(insta_url):
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(insta_url, download=False)
-            return info.get('url', None)
+        # Convert to embed URL
+        if not insta_url.endswith("/"):
+            insta_url += "/"
+        embed_url = insta_url + "embed"
+
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+
+        res = requests.get(embed_url, headers=headers)
+
+        # 🔥 Extract video URL from page
+        match = re.search(r'"video_url":"([^"]+)"', res.text)
+
+        if match:
+            video_url = match.group(1)
+            return video_url.replace("\\u0026", "&")
+
     except Exception as e:
         print("Error:", e)
-        return None
+
+    return None
 
 # 🤖 Telegram webhook
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
